@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://unpkg.com/htmx.org@2.0.2" integrity="sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ" crossorigin="anonymous"></script>
     <title>cider ⋅ ivp4</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
     <style>
 :root {
   --background: #fefefe;
@@ -14,6 +20,7 @@
   --secondary: #f0f0f0;
   --tertiary: #e0e0e0;
   --quaternary: #666;
+  --danger: firebrick;
   --a: darkred;
   --b: darkgoldenrod;
   --c: darkmagenta;
@@ -21,30 +28,32 @@
   --e: darkgray;
 }
 html {background:var(--background);color:var(--foreground)}
-body {margin:auto;max-width:700px;font-family:sans-serif}
+body {margin:auto;max-width:700px;font-family:"Inter",sans-serif}
 main {margin-top:9rem;}
 a {text-decoration-style: dotted}
 .results, .binary {margin:auto;text-align:center;}
+.mono {font-family:"JetBrains Mono",monospace;}
 footer {color:var(--quaternary);margin-inline:auto;margin-top:1.5rem;margin-bottom:4.5rem;bottom:0;left:0;right:0;width:fit-content;text-align:center;}
 footer a, footer a:visited {color:var(--quaternary)}
+.form-group {display:inline;}
 form {margin:0 auto;text-align:center;}
-#cidr {line-height: 3rem; font-size:2.5rem;font-family:monospace;font-weight:600}
-#cidr input {width:4rem;text-align:center;font-size:2.5rem;font-weight:600;height:3.5rem;vertical-align:middle;border:none;border-radius:.5rem;background:var(--secondary);}
-input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button {-webkit-appearance:none;margin:0;}
-input[type=number] {-moz-appearance:textfield;}
-.number {font-family:monospace;font-size:1.25rem;border:1px solid var(--tertiary);padding:.1rem;background:var(--secondary)}
+#cidr {line-height: 3rem; font-size:2.5rem;font-weight:600}
+#cidr input {width:5rem;text-align:center;font-size:2.5rem;font-weight:600;height:3.5rem;vertical-align:middle;border:2px solid var(--secondary);border-radius:.5rem;background:var(--secondary);}
+#cidr input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button {-webkit-appearance:none;margin:0;}
+#cidr input[type=number] {-moz-appearance:textfield;}
+#cidr input[aria-invalid="true"] {border: 2px solid var(--danger)}
+.number {font-size:1.25rem;border:1px solid var(--tertiary);padding:.1rem;background:var(--secondary)}
 .number:nth-child(1) {border-radius:.3rem 0rem 0rem .3rem}
 .number:nth-child(8) {border-radius:0rem .3rem .3rem 0rem}
 .octet {display:inline-block;padding:.5rem;}
 .value {margin:2rem 0;}
 .value p {color:var(--quaternary)}
-.value h2 {font-family:monospace}
 .results-container {border: 1px solid var(--secondary); border-radius:.5rem; background: var(--background-2); display: flex;flex-direction: row;max-width:500px;margin: auto;}
 .spacer {padding: 4rem;}
 @media only screen and (max-width: 600px) {
   #cidr {font-size:2rem}
-  #cidr input {font-size:2rem;height:2.5rem}
-  body {max-width: 100%}
+  #cidr input {width:4rem;font-size:2rem;height:2.5rem}
+ body {max-width: 100%}
   main {margin-top: 4.5rem}
   .binary {margin:0}
   .spacer {padding:2rem;}
@@ -57,18 +66,19 @@ input[type=number] {-moz-appearance:textfield;}
   .value {margin-bottom:0rem;}
 }
 @media (prefers-color-scheme: dark) {
-  :root {
-  --background: #202020;
-  --background-2: #282828;
-  --foreground: #fefefe;
-  --secondary: #2e2e2e;
-  --tertiary: #3e3e3e;
-  --quaternary: #888;
-  --a: tomato;
-  --b: goldenrod;
-  --c: mediumorchid;
-  --d: skyblue;
-  --e: gray;
+    :root {
+    --background: #202020;
+    --background-2: #282828;
+    --foreground: #fefefe;
+    --secondary: #2e2e2e;
+    --tertiary: #3e3e3e;
+    --quaternary: #888;
+    --a: tomato;
+    --b: goldenrod;
+    --c: mediumorchid;
+    --d: skyblue;
+    --e: gray;
+    --danger: crimson;
   }
 }
     </style>
@@ -83,48 +93,81 @@ input[type=number] {-moz-appearance:textfield;}
   >
     <section>
       <form id="cidr"
+        class="mono"
         hx-get="/"
         hx-swap="outerHTML"
         hx-target="#results"
         hx-select="#results"
         hx-trigger="input changed delay:90ms from:input,keyup[keyCode==13]"
       >
-        <input
-          style="color:var(--a)"
-          type="number"
-          name="a"
-          min="0"
-          max="255"
-          value="{{if .Addr.A}}{{.Addr.A}}{{end}}"
-        /><span>.</span><input
-          style="color:var(--b)"
-          type="number"
-          min="0"
-          max="255"
-          name="b"
-          value="{{if .Addr.B}}{{.Addr.B}}{{end}}"
-        /><span>.</span><input
-          style="color:var(--c)"
-          type="number"
-          min="0"
-          max="255"
-          name="c"
-          value="{{if .Addr.C}}{{.Addr.C}}{{end}}"
-        /><span>.</span><input
-          style="color:var(--d)"
-          type="number"
-          min="0"
-          max="255"
-          name="d"
-          value="{{if .Addr.D}}{{.Addr.D}}{{end}}"
-        /><span>/</span><input
-          style="color:var(--e)"
-          type="number"
-          min="0"
-          max="32"
-          name="e"
-          value="{{if .Addr.E}}{{.Addr.E}}{{end}}"
-        />
+        <div class="form-group">
+          <input
+            class="mono"
+            style="color:var(--a)"
+            name="a"
+            required
+            hx-validate="true"
+            oninput='this.setAttribute("aria-invalid", "false");'
+            hx-on:htmx:validation:failed='this.setAttribute("aria-invalid", "true");'
+            hx-on:htmx:validation:halted='this.setAttribute("aria-invalid", "true");'
+            type="text"
+            pattern="^(25[0-5]|(2[0-4]|1\d|[1-9]|)\d)$"
+            inputmode="numeric"
+            maxlength="3"
+          /></div><span>.</span><div class="form-group"><input
+            class="mono"
+            style="color:var(--b)"
+            name="b"
+            required
+            hx-validate="true"
+            oninput='this.setAttribute("aria-invalid", "false");'
+            hx-on:htmx:validation:failed='this.setAttribute("aria-invalid", "true");'
+            hx-on:htmx:validation:halted='this.setAttribute("aria-invalid", "true");'
+            type="text"
+            pattern="^(25[0-5]|(2[0-4]|1\d|[1-9]|)\d)$"
+            inputmode="numeric"
+            maxlength="3"
+          /></div><span>.</span><div class="form-group"><input
+            class="mono"
+            style="color:var(--c)"
+            name="c"
+            required
+            hx-validate="true"
+            oninput='this.setAttribute("aria-invalid", "false");'
+            hx-on:htmx:validation:failed='this.setAttribute("aria-invalid", "true");'
+            hx-on:htmx:validation:halted='this.setAttribute("aria-invalid", "true");'
+            type="text"
+            pattern="^(25[0-5]|(2[0-4]|1\d|[1-9]|)\d)$"
+            inputmode="numeric"
+            maxlength="3"
+          /></div><span>.</span><div class="form-group"><input
+            class="mono"
+            style="color:var(--d)"
+            name="d"
+            required
+            hx-validate="true"
+            oninput='this.setAttribute("aria-invalid", "false");'
+            hx-on:htmx:validation:failed='this.setAttribute("aria-invalid", "true");'
+            hx-on:htmx:validation:halted='this.setAttribute("aria-invalid", "true");'
+            type="text"
+            pattern="^(25[0-5]|(2[0-4]|1\d|[1-9]|)\d)$"
+            inputmode="numeric"
+            maxlength="3"
+          /></div><span>/</span><div class="form-group"><input
+            class="mono"
+            style="color:var(--e)"
+            name="e"
+            required
+            hx-validate="true"
+            oninput='this.setAttribute("aria-invalid", "false");'
+            hx-on:htmx:validation:failed='this.setAttribute("aria-invalid", "true");'
+            hx-on:htmx:validation:halted='this.setAttribute("aria-invalid", "true");'
+            type="text"
+            pattern="^(0|[12]\d|3[0-2])$"
+            inputmode="numeric"
+            maxlength="2"
+          />
+        </div>
       </form>
     </section>
     <div class="spacer"></div>
@@ -132,22 +175,22 @@ input[type=number] {-moz-appearance:textfield;}
       <div class="results-container">
         <div class="results">
           <div class="value">
-            <p>netmask</p></th>
-            <h2>{{.Results.Netmask}}</h2>
+            <p>gateway</p>
+            <h2 class="mono">{{.Results.Gateway}}</h2>
           </div>
           <div class="value">
-            <p>gateway</p>
-            <h2>{{.Results.Gateway}}</h2>
+            <p>netmask</p></th>
+            <h2 class="mono">{{.Results.Netmask}}</h2>
           </div>
         </div>
         <div class="results">
           <div class="value">
             <p>broadcast</p>
-            <h2>{{.Results.Broadcast}}</h2>
+            <h2 class="mono">{{.Results.Broadcast}}</h2>
           </div>
           <div class="value">
             <p># addresses</p>
-            <h2>{{.Results.Count}}</h2>
+            <h2 class="mono">{{.Results.Count}}</h2>
           </div>
         </div>
       </div>
@@ -158,7 +201,7 @@ input[type=number] {-moz-appearance:textfield;}
         {{- if or (or (eq $i 0) (eq $i 8)) (or (eq $i 16) (eq $i 24)) -}}
         <div class="octet">
         {{- end -}}
-        <span class="number"
+        <span class="number mono"
           {{if gt $i $m}}
           style="color:var(--e)"
           {{else if lt $i 8}}
