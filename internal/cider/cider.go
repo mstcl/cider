@@ -39,17 +39,17 @@ type Addr struct {
 func Default() *Cider {
 	return &Cider{
 		Results: Results{
-			Netmask:   "0.0.0.0",
-			Gateway:   "0.0.0.0",
-			Broadcast: "0.0.0.0",
-			Count:     4294967296,
+			Netmask:   "255.255.255.254",
+			Gateway:   "192.168.1.0",
+			Broadcast: "192.168.1.1",
+			Count:     2,
 		},
 		Addr: Addr{
-			A: "0",
-			B: "0",
-			C: "0",
+			A: "192",
+			B: "168",
+			C: "1",
 			D: "0",
-			E: "0",
+			E: "31",
 		},
 		Updated: Updated{
 			A: false,

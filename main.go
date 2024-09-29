@@ -1,23 +1,51 @@
 package main
 
 import (
-	"log/slog"
+	"embed"
+	"flag"
+	"html/template"
+	"log"
 	"net/http"
-	"os"
+	"time"
 
-	"github.com/mstcl/cider/handler"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/mstcl/cider/internal/handler"
 )
 
-const httpAddr = "0.0.0.0:8080"
+var addr = flag.String("addr", "0.0.0.0:8080", "address to listen on")
+
+//go:embed web
+var web embed.FS
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	handler.Logger = logger
+	flag.Parse()
 
-	http.HandleFunc("/", handler.Index)
+	r := echo.New()
+	r.Use(middleware.Logger())
+	r.Use(middleware.Recover())
+	r.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		HTML5:      true,
+		Root:       "web",
+		Filesystem: http.FS(web),
+	}))
+	r.Use(middleware.GzipWithConfig(middleware.GzipConfig{
+		Level: 5,
+	}))
 
-	if err := http.ListenAndServe(httpAddr, nil); err != nil {
-		logger.Error("http", "error", err)
-		os.Exit(1)
+	r.GET("/", handler.Index)
+
+	t := handler.Template{Template: template.Must(template.ParseFS(web, "web/templates/index.tmpl"))}
+	r.Renderer = t
+
+	r.IPExtractor = echo.ExtractIPDirect()
+
+	r.Server.ReadHeaderTimeout = 5 * time.Second
+	r.Server.ReadTimeout = 5 * time.Second
+	r.Server.WriteTimeout = 5 * time.Second
+	r.Server.IdleTimeout = 60 * time.Second
+
+	if err := r.Start(*addr); err != http.ErrServerClosed {
+		log.Fatal("http error:", err)
 	}
 }

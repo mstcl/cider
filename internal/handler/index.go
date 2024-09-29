@@ -2,40 +2,41 @@ package handler
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
 	"net/netip"
-	"net/url"
-	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/labstack/echo/v4"
 	"github.com/mstcl/cider/internal/calculation"
 	"github.com/mstcl/cider/internal/cider"
 )
 
-func Index(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		handleRequests(w, r)
-	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	}
+type Request struct {
+	A string `query:"a"`
+	B string `query:"b"`
+	C string `query:"c"`
+	D string `query:"d"`
+	E string `query:"e"`
 }
 
-func handleRequests(w http.ResponseWriter, r *http.Request) {
+func Index(e echo.Context) error {
 	var c *cider.Cider
 
-	if len(r.URL.Query()) != 0 {
-		addr, binary, mask, updated := parseParams(r.URL.Query())
+	if len(e.QueryParams()) != 0 {
+		var r Request
+		err := e.Bind(&r)
+		if err != nil {
+			return e.String(http.StatusBadRequest, "bad request")
+		}
+
+		addr, binary, mask, updated := parseParams(&r)
 		input := formAddr(addr)
 
 		results, err := getResults(input)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("bad request: %v", err), 400)
+			return echo.NewHTTPError(http.StatusBadRequest, "calculation failed")
 		}
-
-		Logger.Debug("calculation", "results", results)
 
 		c = &cider.Cider{
 			Results: cider.Results{
@@ -53,17 +54,11 @@ func handleRequests(w http.ResponseWriter, r *http.Request) {
 		c = cider.Default()
 	}
 
-	getIndex(w, r, c)
-}
-
-func getIndex(w http.ResponseWriter, _ *http.Request, data *cider.Cider) {
-	index := filepath.Join("web", "templates", "index.tmpl")
-	t, err := template.ParseFiles(index)
-	if err != nil {
-		http.Error(w, "error parsing templates", 500)
+	if err := e.Render(http.StatusOK, "index", c); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "templating failed")
 	}
 
-	t.ExecuteTemplate(w, "index", data)
+	return nil
 }
 
 func formAddr(a cider.Addr) string {
@@ -76,13 +71,13 @@ func formAddr(a cider.Addr) string {
 	return addr.String()
 }
 
-func parseParams(v url.Values) (cider.Addr, cider.Bits, cider.ZIMask, cider.Updated) {
+func parseParams(r *Request) (cider.Addr, cider.Bits, cider.ZIMask, cider.Updated) {
 	binarySlice := make([]string, 0, 32)
 	addrSlice := make([]string, 4)
-	addrSlice[0] = v.Get("a")
-	addrSlice[1] = v.Get("b")
-	addrSlice[2] = v.Get("c")
-	addrSlice[3] = v.Get("d")
+	addrSlice[0] = r.A
+	addrSlice[1] = r.B
+	addrSlice[2] = r.C
+	addrSlice[3] = r.D
 
 	changedSlice := make([]bool, 4)
 
@@ -108,7 +103,7 @@ func parseParams(v url.Values) (cider.Addr, cider.Bits, cider.ZIMask, cider.Upda
 	}
 
 	changedPrefix := false
-	prefix := v.Get("e")
+	prefix := r.E
 
 	n, err := strconv.Atoi(prefix)
 	if err != nil {
