@@ -1,0 +1,188 @@
+{{define "index"}}
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/htmx.org@2.0.2" integrity="sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ" crossorigin="anonymous"></script>
+    <title>cider ⋅ ivp4</title>
+    <style>
+:root {
+  --background: #fefefe;
+  --background-2: #fafafa;
+  --foreground: #222;
+  --secondary: #f0f0f0;
+  --tertiary: #e0e0e0;
+  --quaternary: #666;
+  --a: darkred;
+  --b: darkgoldenrod;
+  --c: darkmagenta;
+  --d: darkblue;
+  --e: darkgray;
+}
+html {background:var(--background);color:var(--foreground)}
+body {margin:auto;max-width:700px;font-family:sans-serif}
+main {margin-top:9rem;}
+a {text-decoration-style: dotted}
+.results, .binary {margin:auto;text-align:center;}
+footer {color:var(--quaternary);margin-inline:auto;margin-top:1.5rem;margin-bottom:4.5rem;bottom:0;left:0;right:0;width:fit-content;text-align:center;}
+footer a, footer a:visited {color:var(--quaternary)}
+form {margin:0 auto;text-align:center;}
+#cidr {line-height: 3rem; font-size:2.5rem;font-family:monospace;font-weight:600}
+#cidr input {width:4rem;text-align:center;font-size:2.5rem;font-weight:600;height:3.5rem;vertical-align:middle;border:none;border-radius:.5rem;background:var(--secondary);}
+input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button {-webkit-appearance:none;margin:0;}
+input[type=number] {-moz-appearance:textfield;}
+.number {font-family:monospace;font-size:1.25rem;border:1px solid var(--tertiary);padding:.1rem;background:var(--secondary)}
+.number:nth-child(1) {border-radius:.3rem 0rem 0rem .3rem}
+.number:nth-child(8) {border-radius:0rem .3rem .3rem 0rem}
+.octet {display:inline-block;padding:.5rem;}
+.value {margin:2rem 0;}
+.value p {color:var(--quaternary)}
+.value h2 {font-family:monospace}
+.results-container {border: 1px solid var(--secondary); border-radius:.5rem; background: var(--background-2); display: flex;flex-direction: row;max-width:500px;margin: auto;}
+.spacer {padding: 4rem;}
+@media only screen and (max-width: 600px) {
+  #cidr {font-size:2rem}
+  #cidr input {font-size:2rem;height:2.5rem}
+  body {max-width: 100%}
+  main {margin-top: 4.5rem}
+  .binary {margin:0}
+  .spacer {padding:2rem;}
+  footer {margin-bottom:1.5rem;}
+  .octet {display: block;}
+  .results-container {border: unset;background:unset}
+}
+@media only screen and (max-width: 300px) {
+  .results-container {flex-direction: column;}
+  .value {margin-bottom:0rem;}
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+  --background: #202020;
+  --background-2: #282828;
+  --foreground: #fefefe;
+  --secondary: #2e2e2e;
+  --tertiary: #3e3e3e;
+  --quaternary: #888;
+  --a: tomato;
+  --b: goldenrod;
+  --c: mediumorchid;
+  --d: skyblue;
+  --e: gray;
+  }
+}
+    </style>
+</head>
+<body>
+  <main
+    hx-get="/"
+    hx-include="form"
+    hx-target="#results"
+    hx-select="#results"
+    hx-trigger="load once"
+  >
+    <section>
+      <form id="cidr"
+        hx-get="/"
+        hx-swap="outerHTML"
+        hx-target="#results"
+        hx-select="#results"
+        hx-trigger="input changed delay:90ms from:input,keyup[keyCode==13]"
+      >
+        <input
+          style="color:var(--a)"
+          type="number"
+          name="a"
+          min="0"
+          max="255"
+          value="{{if .Addr.A}}{{.Addr.A}}{{end}}"
+        /><span>.</span><input
+          style="color:var(--b)"
+          type="number"
+          min="0"
+          max="255"
+          name="b"
+          value="{{if .Addr.B}}{{.Addr.B}}{{end}}"
+        /><span>.</span><input
+          style="color:var(--c)"
+          type="number"
+          min="0"
+          max="255"
+          name="c"
+          value="{{if .Addr.C}}{{.Addr.C}}{{end}}"
+        /><span>.</span><input
+          style="color:var(--d)"
+          type="number"
+          min="0"
+          max="255"
+          name="d"
+          value="{{if .Addr.D}}{{.Addr.D}}{{end}}"
+        /><span>/</span><input
+          style="color:var(--e)"
+          type="number"
+          min="0"
+          max="32"
+          name="e"
+          value="{{if .Addr.E}}{{.Addr.E}}{{end}}"
+        />
+      </form>
+    </section>
+    <div class="spacer"></div>
+    <section id="results">
+      <div class="results-container">
+        <div class="results">
+          <div class="value">
+            <p>netmask</p></th>
+            <h2>{{.Results.Netmask}}</h2>
+          </div>
+          <div class="value">
+            <p>gateway</p>
+            <h2>{{.Results.Gateway}}</h2>
+          </div>
+        </div>
+        <div class="results">
+          <div class="value">
+            <p>broadcast</p>
+            <h2>{{.Results.Broadcast}}</h2>
+          </div>
+          <div class="value">
+            <p># addresses</p>
+            <h2>{{.Results.Count}}</h2>
+          </div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div class="binary">
+      {{$m := .ZIMask}}
+      {{- range $i, $v := .Binary -}}
+        {{- if or (or (eq $i 0) (eq $i 8)) (or (eq $i 16) (eq $i 24)) -}}
+        <div class="octet">
+        {{- end -}}
+        <span class="number"
+          {{if gt $i $m}}
+          style="color:var(--e)"
+          {{else if lt $i 8}}
+          style="color:var(--a)"
+          {{else if (and (gt $i 7) (lt $i 16))}}
+          style="color:var(--b)"
+          {{else if (and (gt $i 15) (lt $i 24))}}
+          style="color:var(--c)"
+          {{else if (and (gt $i 23) (lt $i 32))}}
+          style="color:var(--d)"
+          {{end}}
+        >{{- if gt $i $m}}0{{else}}{{$v}}{{end}}</span>
+        {{- if or (or (eq $i 7) (eq $i 15)) (or (eq $i 23) (eq $i 31)) -}}
+        </div>
+        {{- end -}}
+      {{end}}
+      </div>
+    </section>
+  </main>
+  <div class="spacer"></div>
+  <footer>
+    <small>made with <a href="https://go.dev">golang</a> and <a href="https://htmx.org">htmx</a> ⋅ <a href="https://github.com/mstcl/cider">src</a>
+    </small>
+  </footer>
+</body>
+</html>
+{{end}}
